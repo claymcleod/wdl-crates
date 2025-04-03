@@ -15,7 +15,8 @@ pub struct Outputs {
     ///
     /// This may be set to the name of the call in a workflow or the task name
     /// for a direct task execution.
-    name: Option<String>,
+    name: Option<
+    String>,
     /// The map of output name to value.
     values: IndexMap<String, Value>,
 }
