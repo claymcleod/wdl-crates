@@ -59,7 +59,7 @@ pub trait Coercible: Sized {
 /// Represents a WDL runtime value.
 ///
 /// Values are cheap to clone.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Value {
     /// The value is a literal `None` value.
     None,
@@ -626,8 +626,23 @@ impl From<i64> for Value {
     }
 }
 
+impl TryFrom<u64> for Value {
+    type Error = std::num::TryFromIntError;
+
+    fn try_from(value: u64) -> std::result::Result<Self, Self::Error> {
+        let value: i64 = value.try_into()?;
+        Ok(value.into())
+    }
+}
+
 impl From<f64> for Value {
     fn from(value: f64) -> Self {
+        Self::Primitive(value.into())
+    }
+}
+
+impl From<String> for Value {
+    fn from(value: String) -> Self {
         Self::Primitive(value.into())
     }
 }
@@ -870,6 +885,14 @@ impl<'de> serde::Deserialize<'de> for Value {
         }
 
         deserializer.deserialize_any(Visitor)
+    }
+}
+
+impl std::str::FromStr for Value {
+    type Err = serde_json::Error;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        serde_json::from_str(s)
     }
 }
 
@@ -1304,6 +1327,12 @@ impl From<f64> for PrimitiveValue {
     }
 }
 
+impl From<String> for PrimitiveValue {
+    fn from(value: String) -> Self {
+        Self::String(value.into())
+    }
+}
+
 impl Coercible for PrimitiveValue {
     fn coerce(&self, target: &Type) -> Result<Self> {
         if target.is_union() || target.is_none() || self.ty().eq(target) {
@@ -1402,7 +1431,7 @@ impl serde::Serialize for PrimitiveValue {
 /// Represents a `Pair` value.
 ///
 /// Pairs are cheap to clone.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Pair {
     /// The type of the pair.
     ty: Type,
@@ -1484,7 +1513,7 @@ impl fmt::Display for Pair {
 /// Represents an `Array` value.
 ///
 /// Arrays are cheap to clone.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Array {
     /// The type of the array.
     ty: Type,
@@ -1585,7 +1614,7 @@ impl fmt::Display for Array {
 /// Represents a `Map` value.
 ///
 /// Maps are cheap to clone.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Map {
     /// The type of the map value.
     ty: Type,
@@ -1745,7 +1774,7 @@ impl fmt::Display for Map {
 /// Represents an `Object` value.
 ///
 /// Objects are cheap to clone.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Object {
     /// The members of the object.
     ///
@@ -1875,7 +1904,7 @@ impl From<IndexMap<String, Value>> for Object {
 /// Represents a `Struct` value.
 ///
 /// Structs are cheap to clone.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Struct {
     /// The type of the struct value.
     ty: Type,
@@ -2006,7 +2035,7 @@ impl fmt::Display for Struct {
 /// Represents a compound value.
 ///
 /// Compound values are cheap to clone.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum CompoundValue {
     /// The value is a `Pair` of values.
     Pair(Pair),
@@ -2703,7 +2732,7 @@ impl serde::Serialize for CompoundValue {
 }
 
 /// Immutable data for task values.
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 struct TaskData {
     /// The name of the task.
     name: Arc<String>,
@@ -2747,7 +2776,7 @@ struct TaskData {
 /// Represents a value for `task` variables in WDL 1.2.
 ///
 /// Task values are cheap to clone.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TaskValue {
     /// The immutable data for task values.
     data: Arc<TaskData>,
@@ -2955,7 +2984,7 @@ impl TaskValue {
 /// Represents a hints value from a WDL 1.2 hints section.
 ///
 /// Hints values are cheap to clone.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct HintsValue(Object);
 
 impl HintsValue {
@@ -2990,7 +3019,7 @@ impl From<Object> for HintsValue {
 /// Represents an input value from a WDL 1.2 hints section.
 ///
 /// Input values are cheap to clone.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct InputValue(Object);
 
 impl InputValue {
@@ -3025,7 +3054,7 @@ impl From<Object> for InputValue {
 /// Represents an output value from a WDL 1.2 hints section.
 ///
 /// Output values are cheap to clone.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct OutputValue(Object);
 
 impl OutputValue {
@@ -3060,7 +3089,7 @@ impl From<Object> for OutputValue {
 /// Represents the outputs of a call.
 ///
 /// Call values are cheap to clone.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CallValue {
     /// The type of the call.
     ty: CallType,

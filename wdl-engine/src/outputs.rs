@@ -9,7 +9,7 @@ use crate::Scope;
 use crate::Value;
 
 /// Represents outputs of a WDL workflow or task.
-#[derive(Default, Debug)]
+#[derive(Default, Debug, PartialEq)]
 pub struct Outputs {
     /// The name of the outputs.
     ///

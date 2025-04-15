@@ -97,8 +97,14 @@ pub use wdl_lint as lint;
 #[doc(inline)]
 pub use wdl_lsp as lsp;
 
+// #[cfg(feature = "cli")]
+// pub mod cli;
+
 #[cfg(feature = "cli")]
-pub mod cli;
+pub mod command;
+
+#[cfg(feature = "cli")]
+pub use command::Command;
 
 #[cfg(test)]
 mod test {

@@ -644,7 +644,7 @@ impl Inputs {
     /// Returns `Ok(Some(_))` if the file is a non-empty inputs.
     ///
     /// Returns `Ok(None)` if the file contains an empty input.
-    pub fn parse_json(
+    pub(crate) fn parse_json(
         document: &Document,
         path: impl AsRef<Path>,
     ) -> Result<Option<(String, Self)>> {
