@@ -62,13 +62,9 @@ async fn main() -> Result<()> {
     configure_logging(&app)?;
 
     if let Err(e) = match app.command {
-        // Command::Parse(cmd) => cmd.exec().await,
         Command::Check(args) => wdl::command::check::main(args).await,
-        // Command::Analyze(cmd) => cmd.exec().await,
-        // Command::Format(cmd) => cmd.exec().await,
-        // Command::Doc(cmd) => cmd.exec().await,
+        Command::Run(args) => wdl::command::run::main(args).await,
         Command::Validate(args) => wdl::command::validate::main(args).await,
-        // Command::Run(cmd) => cmd.exec().await,
     } {
         eprintln!(
             "{error}: {e:?}",

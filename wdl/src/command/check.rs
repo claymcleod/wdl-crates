@@ -30,7 +30,7 @@ pub struct Args {
     pub print_results: bool,
 }
 
-/// The main function for the `check` command.
+/// The main function for the `check` subcommand.
 pub async fn main(args: Args) -> Result<()> {
     if args.sources.is_empty() {
         bail!("you must provide at least one source file, directory, or URL");

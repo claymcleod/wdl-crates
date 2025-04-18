@@ -130,7 +130,7 @@ impl Analysis {
 
         let results = analyzer.analyze(()).await?;
 
-        Ok(AnalysisResults::from(results))
+        Ok(AnalysisResults::new(results))
     }
 }
 

@@ -16,6 +16,7 @@ wdl-lint = { path = "../wdl-lint" }
 
 anyhow.workspace = true
 codespan-reporting.workspace = true
+colored.workspace = true
 indexmap.workspace = true
 regex.workspace = true
 serde.workspace = true

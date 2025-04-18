@@ -32,11 +32,11 @@ pub enum Error {
 pub struct InputFile;
 
 impl InputFile {
-    /// Reads an input WDL file.
+    /// Reads a input file.
     ///
-    /// The file is attempted to be parsed as JSON then YAML. If either is
-    /// succesful, the inner value map is returned wrapped in [`Ok`]. If neither
-    /// works, an [`Error::UnsupportedFormat`] is returned.
+    /// The file is attempted to be parsed as JSON and, if that fails, then
+    /// YAML. If either is succesful, the inner value map is returned wrapped in
+    /// [`Ok`]. If neither is able to be parsed, an [`Error::UnsupportedFormat`] is returned.
     pub fn read<P: AsRef<Path>>(path: P) -> Result<Inputs, Error> {
         let path = path.as_ref();
         let content: String = std::fs::read_to_string(path).map_err(Error::Io)?;
@@ -46,6 +46,7 @@ impl InputFile {
 
             for (key, value) in object.iter() {
                 inputs.insert(key.to_owned(), value.clone());
+                dbg!(&value);
             }
 
             Ok(inputs)

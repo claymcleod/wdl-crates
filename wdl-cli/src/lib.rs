@@ -14,7 +14,8 @@ use codespan_reporting::term::termcolor::StandardStream;
 use wdl_ast::Diagnostic;
 use wdl_ast::Severity;
 
-mod analysis;
+pub mod analysis;
+pub mod eval;
 pub mod input;
 
 pub use analysis::Analysis;

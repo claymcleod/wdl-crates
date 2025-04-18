@@ -33,7 +33,7 @@ clap-verbosity-flag = { version = "3.0.2", features = ["tracing"] }
 codespan-reporting = "0.11.1"
 colored = "3.0.0"
 convert_case = "0.8.0"
-crankshaft = "0.1.0"
+crankshaft = { path = "../crankshaft/crankshaft" }
 dirs = "6.0.0"
 faster-hex = "0.10.0"
 ftree = "1.2.0"

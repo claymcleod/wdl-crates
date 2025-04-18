@@ -8,31 +8,18 @@ use anyhow::Result;
 use clap::Subcommand;
 
 pub mod check;
+pub mod run;
 pub mod validate;
 
 /// The command to run.
 #[derive(Subcommand)]
 pub enum Command {
-    /// Runs an analysis on a file or set of files within a directory.
+    /// Runs an analysis on a WDL file or set of WDL files within a directory.
     Check(check::Args),
+
+    /// Runs the specified WDL task or workflow.
+    Run(run::Args),
 
     /// Validates the inputs with respect to the specified WDL task or workflow.
     Validate(validate::Args),
-}
-
-/// Reads source from the given path.
-///
-/// If the path is simply `-`, the source is read from STDIN.
-fn read_source(path: &Path) -> Result<String> {
-    if path.as_os_str() == "-" {
-        let mut source = String::new();
-        std::io::stdin()
-            .read_to_string(&mut source)
-            .context("failed to read source from stdin")?;
-        Ok(source)
-    } else {
-        Ok(std::fs::read_to_string(path).with_context(|| {
-            format!("failed to read source file `{path}`", path = path.display())
-        })?)
-    }
 }

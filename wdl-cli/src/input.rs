@@ -9,6 +9,9 @@ use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::LazyLock;
 use thiserror::Error;
+use wdl_analysis::document::Document;
+use wdl_engine::Inputs as EngineInputs;
+use wdl_engine::Object;
 use wdl_engine::PrimitiveValue;
 use wdl_engine::Value;
 
@@ -16,21 +19,20 @@ pub mod file;
 
 pub use file::InputFile;
 
+/// A regex that matches a valid identifier.
 static IDENTIFIER_REGEX: LazyLock<Regex> = LazyLock::new(|| {
     // SAFETY: this is checked statically with tests to always unwrap.
     Regex::new(r"^([\w\-.]+)$").unwrap()
 });
 
-/// If a value cannot be resolved to a type, this regex is compared to the
-/// value. If the regex matches, we assume the value is a string.
+/// If a value in a key-value pair passed in on the command line cannot be
+/// resolved to a WDL type, this regex is compared to the value.
+///
+/// If the regex matches, we assume the value is a string.
 static ASSUME_STRING_REGEX: LazyLock<Regex> = LazyLock::new(|| {
     // SAFETY: this is checked statically with tests to always unwrap.
     Regex::new(r"^[\w ]*$").unwrap()
 });
-
-////////////////////////////////////////////////////////////////////////////////
-// Error
-////////////////////////////////////////////////////////////////////////////////
 
 /// An error related to inputs.
 #[derive(Error, Debug)]
@@ -44,7 +46,7 @@ pub enum Error {
     FileNotFound(PathBuf),
 
     /// Encountered an invalid key-value pair.
-    #[error("invalid key-value pair: {pair}\n\nreason: {reason}")]
+    #[error("invalid key-value pair: `{pair}`; {reason}")]
     InvalidPair {
         /// The string-value of the pair.
         pair: String,
@@ -60,10 +62,6 @@ pub enum Error {
 
 /// A [`Result`](std::result::Result) with an [`Error`].
 pub type Result<T> = std::result::Result<T, Error>;
-
-////////////////////////////////////////////////////////////////////////////////
-// Input
-////////////////////////////////////////////////////////////////////////////////
 
 /// An input parsed from the command line.
 #[derive(Clone, Debug, PartialEq)]
@@ -222,10 +220,6 @@ impl FromStr for Input {
     }
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// Inputs
-////////////////////////////////////////////////////////////////////////////////
-
 /// A set of inputs parsed from the command line and compiled on top of one
 /// another.
 #[derive(Clone, Debug, Default)]
@@ -266,6 +260,15 @@ impl Inputs {
     pub fn into_inner(self) -> IndexMap<String, Value> {
         self.0
     }
+
+    /// Converts a set of inputs to a set of engine inputs.
+    pub fn into_engine_inputs(
+        self,
+        document: &Document,
+    ) -> anyhow::Result<Option<(String, EngineInputs)>> {
+        let object = Object::from(self.0);
+        EngineInputs::parse_object(document, object)
+    }
 }
 
 impl Deref for Inputs {
@@ -289,19 +292,22 @@ mod tests {
     #[test]
     fn identifier_regex() {
         assert!(IDENTIFIER_REGEX.is_match("here_is-an.identifier"));
+        assert!(!IDENTIFIER_REGEX.is_match("here is not an identifier"));
     }
 
     #[test]
     fn assume_string_regex() {
+        // Matches.
         assert!(ASSUME_STRING_REGEX.is_match(""));
         assert!(ASSUME_STRING_REGEX.is_match("fooBAR082"));
         assert!(ASSUME_STRING_REGEX.is_match("foo bar baz"));
 
+        // Non-matches.
         assert!(!ASSUME_STRING_REGEX.is_match("[1, a]"));
     }
 
     #[test]
-    fn file() {
+    fn file_parsing() {
         // A valid JSON file path.
         let input = "./tests/fixtures/inputs_one.json".parse::<Input>().unwrap();
         assert!(matches!(
@@ -329,7 +335,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_key_value_pairs() {
+    fn key_value_pair_parsing() {
         // A standard key-value pair.
         let input = r#"foo="bar""#.parse::<Input>().unwrap();
         let (key, value) = input.unwrap_pair();
